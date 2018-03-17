@@ -47,10 +47,11 @@ namespace LunaManager
             string target = @"Kerbal Space Program";
             if (folder != target)
             {
-                Console.WriteLine("This is not the Kerbal Space Program Folder!\n HALT");
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine("HALT\nThis is not the Kerbal Space Program Folder! ");
                 Console.WriteLine("The manager will now end until this is resolved.");
                 var input = Console.ReadLine();
-                Application.Exit();
+                Environment.Exit(0);
             }
         }
         private static void processCheck()
@@ -60,7 +61,9 @@ namespace LunaManager
                 foreach (Process proc in Process.GetProcessesByName("KSP_x64"))
                 {
                     proc.Kill();
+                    Console.BackgroundColor = ConsoleColor.Green;
                     Console.WriteLine("Kerbal Space Program was found running and has been killed.");
+                    Console.ResetColor();
                 }
             }
             catch (Exception ex)
@@ -72,11 +75,14 @@ namespace LunaManager
                 foreach (Process proc in Process.GetProcessesByName("KSP"))
                 {
                     proc.Kill();
+                    Console.BackgroundColor = ConsoleColor.Green;
                     Console.WriteLine("Kerbal Space Program was found running and has been killed.");
+                    Console.ResetColor();
                 }
             }
             catch (Exception ex)
             {
+                Console.ForegroundColor = ConsoleColor.Red;
                 Console.Write(ex.Message);
             }
             try
@@ -85,10 +91,12 @@ namespace LunaManager
                 {
                     proc.Kill();
                     Console.WriteLine("Luna Updater was found running and has been killed.");
+                    Console.ResetColor();
                 }
             }
             catch (Exception ex)
             {
+                Console.ForegroundColor = ConsoleColor.Red;
                 Console.Write(ex.Message);
             }
 
@@ -110,9 +118,12 @@ namespace LunaManager
         }
         private static void Menu()
         {
+            Console.ForegroundColor = ConsoleColor.Blue;
             Console.WriteLine("Welcome to a Kerbal Space Program CLI. This is for actively updating Luna Multiplayer during beta testing. \nBelow are some options that will hopefully make things a lot more simpler.");
             Console.WriteLine("Here are your options:");
+            Console.ForegroundColor = ConsoleColor.DarkCyan;
             showCommands();
+            Console.ResetColor();
             Console.WriteLine("Enter a number to choose:");
             var input = double.Parse(Console.ReadLine());
             if (input == 1)
@@ -126,7 +137,9 @@ namespace LunaManager
             }
             else
                 clearScreen();
+            Console.ForegroundColor = ConsoleColor.Red;
             Console.WriteLine("Invalid Option\n");
+            Console.ResetColor();
             Menu();
         }
 
@@ -148,6 +161,7 @@ namespace LunaManager
 
         private static async Task<string> GetDownloadUrl(HttpClient client)
         {
+            
             using (HttpResponseMessage response = await client.GetAsync(ProjectUrl))
             {
                 response.EnsureSuccessStatusCode();
@@ -168,6 +182,7 @@ namespace LunaManager
 
             if (!string.IsNullOrEmpty(downloadUrl))
             {
+                Console.ForegroundColor = ConsoleColor.Green;
                 Console.WriteLine($"Downloading LMP from: {downloadUrl} Please wait...");
                 try
                 {
@@ -187,8 +202,11 @@ namespace LunaManager
                 }
                 catch (Exception e)
                 {
+                    Console.ForegroundColor = ConsoleColor.Red;
                     Console.WriteLine(e);
+                    Console.ResetColor();
                     throw;
+                    
                 }
                 finally
                 {
@@ -199,6 +217,7 @@ namespace LunaManager
 
         private static void showCommands()
         {
+            Console.ForegroundColor = ConsoleColor.Magenta;
             Console.WriteLine("1. Start up Kerbal Space Program ");
             Console.WriteLine("2. Install/Update LunaMultiplayer");
         }
