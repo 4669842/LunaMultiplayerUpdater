@@ -90,6 +90,7 @@ namespace LunaManager
                 foreach (Process proc in Process.GetProcessesByName("Updater"))
                 {
                     proc.Kill();
+                    Console.BackgroundColor = ConsoleColor.Green;
                     Console.WriteLine("Luna Updater was found running and has been killed.");
                     Console.ResetColor();
                 }
@@ -101,7 +102,7 @@ namespace LunaManager
             }
 
         }
-        
+       
         private static void kerbalSafeLaunch()
         {
             clearScreen();
@@ -119,11 +120,12 @@ namespace LunaManager
         private static void Menu()
         {
             Console.ForegroundColor = ConsoleColor.Blue;
+            Console.BackgroundColor = ConsoleColor.White;
             Console.WriteLine("Welcome to a Kerbal Space Program CLI. This is for actively updating Luna Multiplayer during beta testing. \nBelow are some options that will hopefully make things a lot more simpler.");
             Console.WriteLine("Here are your options:");
-            Console.ForegroundColor = ConsoleColor.DarkCyan;
-            showCommands();
             Console.ResetColor();
+            showCommands();
+            
             Console.WriteLine("Enter a number to choose:");
             var input = double.Parse(Console.ReadLine());
             if (input == 1)
@@ -220,17 +222,20 @@ namespace LunaManager
             Console.ForegroundColor = ConsoleColor.Magenta;
             Console.WriteLine("1. Start up Kerbal Space Program ");
             Console.WriteLine("2. Install/Update LunaMultiplayer");
+            Console.ResetColor();
         }
         private static void kerbalLaunch()
         {
 
             processCheck();
+            Console.BackgroundColor = ConsoleColor.Green;
             Console.WriteLine("Booting Kerbal Space Program");
             string kerbal64 = @"KSP_x64.exe";
             if (File.Exists(kerbal64))
                 Process.Start(kerbal64);
             else
                 Console.WriteLine("Can not start Kerbal Space Program. Did you place this in the KSP installation folder?");
+            Console.ResetColor();
             Menu();
         }
         private static void clearScreen()
@@ -244,7 +249,14 @@ namespace LunaManager
 
             processCheck();
             LunaCheck();
-            Process.Start(lunaUpdater);
+            var lunaProcess = new Process();
+            lunaProcess.StartInfo = new ProcessStartInfo(lunaUpdater)
+            {
+                UseShellExecute = false
+            };
+
+            lunaProcess.Start();
+            lunaProcess.WaitForExit();
             Menu();
 
         }
@@ -256,7 +268,9 @@ namespace LunaManager
 
             if (!File.Exists(Path.Combine(Directory.GetCurrentDirectory(), lunaUpdater)))
             {
+                Console.ForegroundColor = ConsoleColor.Red;
                 Console.WriteLine(" The \"Updater.exe\" is not in the main KSP folder");
+                Console.ResetColor();
                 Console.WriteLine("Installing Luna Updater...."); 
                 string zipPath = Path.Combine(Directory.GetCurrentDirectory(), "LunaMultiplayerUpdater-Release.zip");
                 string extractPath = Directory.GetCurrentDirectory();
@@ -281,11 +295,14 @@ namespace LunaManager
                         ZipFile.ExtractToDirectory(Path.Combine(Path.GetTempPath(), FileName), FolderToDecompress);
                         DownloadAndReplaceFiles(ProductToDownload.Client);
                         CopyFilesFromTempToDestination();
-
+                        Console.BackgroundColor = ConsoleColor.DarkGreen;
+                        Console.ForegroundColor = ConsoleColor.White;
                         Console.WriteLine("-----------------===========FINISHED===========-----------------");
+                        Console.ResetColor();
                     }
                     catch (Exception e)
                     {
+                        Console.BackgroundColor = ConsoleColor.Red;
                         Console.WriteLine(e);
                         CleanTempFiles();
                         throw;
