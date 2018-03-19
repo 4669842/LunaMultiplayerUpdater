@@ -24,6 +24,8 @@
 
 ---
 
+<a href="https://imgur.com/a/wAbVx">Look at image install archive<a>
+
 ### Status: [![AppVeyor](https://img.shields.io/appveyor/ci/gavazquez/lunamultiplayerupdater/master.svg?logo=appveyor)](https://ci.appveyor.com/project/gavazquez/lunamultiplayerupdater/branch/master)
 
 ---
