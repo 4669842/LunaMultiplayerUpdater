@@ -20,7 +20,7 @@
 ### Usage:
 
 1) Download the latest release
-2) Put the Manager.exe in your KSP folder. Create a shortcut to your taskbar if you want a easy way to access. 
+2) Put the LunaManager.exe in your KSP folder. Create a shortcut to your taskbar if you want a easy way to access. 
 
 ---
 
