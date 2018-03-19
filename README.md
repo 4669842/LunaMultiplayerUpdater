@@ -20,8 +20,7 @@
 ### Usage:
 
 1) Download the latest release
-2) Put the ClientUpdater.exe and it's CommonUpdater.dll in the Main KSP folder and run it
-3) Put the ServerUpdater.exe and it's CommonUpdater.dll in the LMP Server folder (next to the .exe) and run it
+2) Put the Manager.exe in your KSP folder. Create a shortcut to your taskbar if you want a easy way to access. 
 
 ---
 
