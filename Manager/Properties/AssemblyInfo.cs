@@ -5,8 +5,8 @@ using System.Runtime.InteropServices;
 // General Information about an assembly is controlled through the following 
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("LunaMultiplayer Manager")]
-[assembly: AssemblyDescription("Manager for KSP and Luna MP")]
+[assembly: AssemblyTitle("LunaMultiplayer Manager 1.0.5")]
+[assembly: AssemblyDescription("Manager for KSP and Luna Multiplayer")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("")]
 [assembly: AssemblyProduct("LunaManager.Properties")]

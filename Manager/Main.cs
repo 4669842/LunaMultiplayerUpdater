@@ -11,6 +11,10 @@ using System.Threading.Tasks;
 
 namespace LunaManager
 {
+    /// <summary>
+    ///   <para>Contains main method. Uses inheritence to build up menu.</para>
+    ///   <para>Contains checks and validators for KSP.</para>
+    /// </summary>
     class MainMenu
     {
         private static Thread thread;
@@ -26,10 +30,10 @@ namespace LunaManager
         static void Main()
         {
             thread = new Thread(Main);
-            installDirCheck();
-            sanityCheck();
-            lunaClientCheck();
-            clientMenu();
+            InstallDirCheck();
+            SanityCheck();
+            LunaClientCheck();
+            ClientMenu();
 
         }
 
@@ -38,12 +42,11 @@ namespace LunaManager
             Client,
             Server
         }
-        private static void installDirCheck()
+        private static void InstallDirCheck()
         {
             string path = AppDomain.CurrentDomain.BaseDirectory;
             string folder = new DirectoryInfo(path).Name;
-            String validKSPDir = null;
-
+           
             string target = @"Kerbal Space Program";
             if (folder != target)
             {
@@ -55,10 +58,10 @@ namespace LunaManager
             }
             else
             {
-                validKSPDir = "1";
+                Console.WriteLine("Successfully checked the directory and noticed some kerbals!");
             }
         }
-        private static void sanityCheck()
+        private static void SanityCheck()
         {
             try
             {
@@ -106,102 +109,106 @@ namespace LunaManager
             }
 
         }
-       
-        private static void kerbalSafeLaunch()
+
+        private static void KerbalSafeLaunch()
         {
-            clearScreen();
-            sanityCheck();
-            installDirCheck();
-            lunaClientCheck();
-            kerbalLaunch();
+            ClearScreen();
+            SanityCheck();
+            InstallDirCheck();
+            LunaClientCheck();
+            KerbalLaunch();
         }
         private static void lunaSafeClientUpdate()
         {
-            clearScreen();
-            sanityCheck();
-            installDirCheck();
-            lunaClientCheck();
-            lunaClientUpdate();
+            ClearScreen();
+            SanityCheck();
+            InstallDirCheck();
+            LunaClientCheck();
+            LunaClientUpdate();
         }
 
-        private static void lunaSafeServerUpdate()
+        private static void LunaSafeServerUpdate()
         {
-            clearScreen();
-            sanityCheck();
-            installDirCheck();
-            lunaServerUpdate();
+            ClearScreen();
+            SanityCheck();
+            InstallDirCheck();
+            LunaServerUpdate();
         }
-        private static void clientMenu()
+        private static void ClientMenu()
         {
             Console.WriteLine("Welcome to a Kerbal Space Program CLI. This is for actively updating Luna Multiplayer during beta testing. \nBelow are some options that will hopefully make things a lot more simpler.");
             Console.WriteLine("Here are your options:");
             Console.ResetColor();
-            showClientCommands();
-            
+            ShowClientCommands();
+
             Console.WriteLine("Enter a number to choose:");
             var input = int.Parse(Console.ReadLine());
             if (input == 1)
             {
-                kerbalSafeLaunch();
+                KerbalSafeLaunch();
 
             }
             if (input == 2)
             {
-               lunaSafeClientUpdate();
+                lunaSafeClientUpdate();
             }
             if (input == 3)
             {
-                clearScreen();
-                serverMenu();
+                ClearScreen();
+                ServerMenu();
             }
             else
-            Console.ForegroundColor = ConsoleColor.Red;
+                Console.ForegroundColor = ConsoleColor.Red;
             Console.WriteLine("Invalid Option\n");
             Console.ResetColor();
-            clientMenu();
+            ClientMenu();
         }
-        private static void serverMenu()
+        private static void ServerMenu()
         {
-            lunaServerCheck();
+            thread = new Thread(ServerMenu);
+            LunaServerCheck();
             Console.WriteLine("Here you can operate and manage your Luna Multiplayer servers by choosing one of the options below.");
             Console.WriteLine("Options:");
             Console.ResetColor();
-            showServerCommands();
+            ShowServerCommands();
 
             Console.WriteLine("Enter a number to choose:");
             var input = int.Parse(Console.ReadLine());
             if (input == 1)
-            { 
-              
-             lunaSafeServerUpdate();
+            {
+
+                LunaSafeServerUpdate();
             }
             if (input == 2)
             {
-               runLunaServer(); 
+                thread = new Thread(RunLunaServer);
+                ClearScreen();
+
+                RunLunaServer();
             }
             if (input == 3)
             {
-                configureServer();
+                ConfigureServer();
             }
             if (input == 4)
             {
-                clearScreen();
-                clientMenu();
+                ClearScreen();
+                ClientMenu();
             }
             else
-            Console.ForegroundColor = ConsoleColor.Red;
+                Console.ForegroundColor = ConsoleColor.Red;
             Console.WriteLine("Invalid Option\n");
             Console.ResetColor();
-            serverMenu();
+            ServerMenu();
         }
 
-        private static void configureServer()
+        private static void ConfigureServer()
         {
-            clearScreen();
+            ClearScreen();
             Console.WriteLine("Welcome to the luna server configurator! You can either load a pre existing configuration or create a new one!");
             Console.WriteLine("============= Feature Coming Soon =============");
         }
-            private static void CleanTempClientFiles()
+        private static void CleanTempClientFiles()
         {
             try
             {
@@ -234,7 +241,7 @@ namespace LunaManager
 
         private static async Task<string> GetDownloadUrl(HttpClient client)
         {
-            
+
             using (HttpResponseMessage response = await client.GetAsync(ProjectUrl))
             {
                 response.EnsureSuccessStatusCode();
@@ -281,7 +288,7 @@ namespace LunaManager
                     Console.WriteLine(e);
                     Console.ResetColor();
                     throw;
-                    
+
                 }
                 finally
                 {
@@ -291,7 +298,7 @@ namespace LunaManager
             }
         }
 
-        private static void showClientCommands()
+        private static void ShowClientCommands()
         {
             Console.ForegroundColor = ConsoleColor.Magenta;
             Console.WriteLine("1. Start up Kerbal Space Program ");
@@ -299,9 +306,9 @@ namespace LunaManager
             Console.WriteLine("3. Run LunaMultiplayer Server");
             Console.ResetColor();
         }
-        private static void showServerCommands()
+        private static void ShowServerCommands()
         {
-            clearScreen();
+            ClearScreen();
             Console.ForegroundColor = ConsoleColor.Magenta;
             Console.WriteLine("1. Install/Update LunaMultiplayer");
             Console.WriteLine("2. Start up Luna Server ");
@@ -309,10 +316,10 @@ namespace LunaManager
             Console.WriteLine("4. Return to Luna Client options");
             Console.ResetColor();
         }
-        private static void kerbalLaunch()
+        private static void KerbalLaunch()
         {
-            installDirCheck();
-            sanityCheck();
+            InstallDirCheck();
+            SanityCheck();
             Console.BackgroundColor = ConsoleColor.Green;
             Console.WriteLine("Booting Kerbal Space Program");
             string kerbal64 = @"KSP_x64.exe";
@@ -321,20 +328,20 @@ namespace LunaManager
             else
                 Console.WriteLine("Can not start Kerbal Space Program. Did you place this in the KSP installation folder?");
             Console.ResetColor();
-            clientMenu();
+            ClientMenu();
         }
-        private static void clearScreen()
+        private static void ClearScreen()
         {
             Console.ResetColor();
             Console.Clear();
         }
 
-        private static void lunaClientUpdate()
+        private static void LunaClientUpdate()
         {
             string lunaUpdater = @"ClientUpdater.exe";
-            installDirCheck();
-            sanityCheck();
-            lunaClientCheck();
+            InstallDirCheck();
+            SanityCheck();
+            LunaClientCheck();
             var lunaProcess = new Process();
             lunaProcess.StartInfo = new ProcessStartInfo(lunaUpdater)
             {
@@ -343,60 +350,52 @@ namespace LunaManager
 
             lunaProcess.Start();
             lunaProcess.WaitForExit();
-            clientMenu();
+            ClientMenu();
 
         }
 
-        private static void lunaServerUpdate()
+        private static void LunaServerUpdate()
         {
-            
-            installDirCheck();
-            sanityCheck();
-            lunaClientCheck();
+
+            InstallDirCheck();
+            SanityCheck();
+            LunaClientCheck();
 
             ProcessStartInfo _processStartInfo = new ProcessStartInfo();
             _processStartInfo.WorkingDirectory = @"Server";
             _processStartInfo.FileName = @"ServerUpdater.exe";
             _processStartInfo.CreateNoWindow = false;
             _processStartInfo.UseShellExecute = true;
-            Process myProcess = Process.Start(_processStartInfo);
-
-            clientMenu();
+            Process serverUpdater = Process.Start(_processStartInfo);
+            serverUpdater.WaitForExit();
+            ClientMenu();
 
         }
-        private static void runLunaServer()
+        private static void RunLunaServer()
         {
+    
+            InstallDirCheck();
+            SanityCheck();
 
-            installDirCheck();
-            sanityCheck();
-           
             try
             {
 
-
-                var lunaProcess = new Process();
-                var lunaServer = @"Server\Server.exe";
-                lunaProcess.StartInfo = new ProcessStartInfo(lunaServer)
-                {
-                    UseShellExecute = false
-                };
-
-                lunaProcess.Start();
-                lunaProcess.WaitForExit();
+                ProcessStartInfo _processStartInfo = new ProcessStartInfo();
+                _processStartInfo.WorkingDirectory = @"Server";
+                _processStartInfo.FileName = @"Server.exe";
+                _processStartInfo.CreateNoWindow = true;
+                _processStartInfo.UseShellExecute = true;
+                Process myProcess = Process.Start(_processStartInfo);
             }
-
-
-
             catch (Exception e)
             {
- 
-                Console.WriteLine(e);
-
+                Console.WriteLine(e.Message);
             }
-            serverMenu();
+          
+            ServerMenu();
         }
 
-        private static void lunaClientCheck()
+        private static void LunaClientCheck()
         {
             string lunaUpdater = @"ClientUpdater.exe";
 
@@ -405,7 +404,7 @@ namespace LunaManager
                 Console.ForegroundColor = ConsoleColor.Red;
                 Console.WriteLine(" The \"ClientUpdater.exe\" is not in the main KSP folder");
                 Console.ResetColor();
-                Console.WriteLine("Installing Luna Updater...."); 
+                Console.WriteLine("Installing Luna Updater....");
                 string zipPath = Path.Combine(Directory.GetCurrentDirectory(), "LunaMultiplayerUpdater-Release.zip");
                 string extractPath = Directory.GetCurrentDirectory();
                 {
@@ -450,16 +449,16 @@ namespace LunaManager
             }
             else
             {
-                clearScreen();
+                ClearScreen();
             }
-        
+
         }
 
-        private static void lunaServerCheck()
+        private static void LunaServerCheck()
         {
             string lunaUpdater = @"ServerUpdater.exe";
 
-            if (!File.Exists(Path.Combine(Directory.GetCurrentDirectory(), "Server",lunaUpdater)))
+            if (!File.Exists(Path.Combine(Directory.GetCurrentDirectory(), "Server", lunaUpdater)))
             {
                 Console.ForegroundColor = ConsoleColor.Red;
                 Console.WriteLine(" The file \"ServerUpdater.exe\" is not in the Luna Server folder...");
@@ -473,50 +472,50 @@ namespace LunaManager
                     ProjectUrl = "https://github.com/LunaMultiplayer/LunaMultiplayerUpdater/releases/download/1.0.0/LunaMultiplayerUpdater-Release.zip";
                     WebClient wb = new WebClient();
                 }
-                    Console.WriteLine($"Downloading LMP from: {ProjectUrl} Please wait...");
-                    try
+                Console.WriteLine($"Downloading LMP from: {ProjectUrl} Please wait...");
+                try
+                {
+                    CleanTempServerFiles();
+                    using (var server = new WebClient())
                     {
-                        CleanTempServerFiles();
-                        using (var server = new WebClient())
-                        {
-                            server.DownloadFile(ProjectUrl, Path.Combine(Path.GetTempPath(), FileName));
-                            Console.WriteLine($"Downloading succeeded! Path: {Path.Combine(Path.GetTempPath(), FileName)}");
-                        }
+                        server.DownloadFile(ProjectUrl, Path.Combine(Path.GetTempPath(), FileName));
+                        Console.WriteLine($"Downloading succeeded! Path: {Path.Combine(Path.GetTempPath(), FileName)}");
+                    }
 
-                        Console.WriteLine($"Decompressing file to {ServerFolderToDecompress}");
-                        ZipFile.ExtractToDirectory(Path.Combine(Path.GetTempPath(), FileName), ServerFolderToDecompress);
-                        DownloadAndReplaceFiles(ProductToDownload.Server);
-                        CopyServerFilesFromTempToDestination();
-                        string ServerExeStub = @"\Server\Server.exe";
+                    Console.WriteLine($"Decompressing file to {ServerFolderToDecompress}");
+                    ZipFile.ExtractToDirectory(Path.Combine(Path.GetTempPath(), FileName), ServerFolderToDecompress);
+                    DownloadAndReplaceFiles(ProductToDownload.Server);
+                    CopyServerFilesFromTempToDestination();
+                    string ServerExeStub = @"\Server\Server.exe";
                     if (!File.Exists(ServerExeStub))
                     {
                         using (FileStream fs = File.Create(Directory.GetCurrentDirectory() + ServerExeStub))
                         {
-                            Byte[] exeStub = new UTF8Encoding(true).GetBytes("Hi, thanks for all the fish! I am a stub until you boot the Luna Manager or Server Updater independently. I do nothing but tell our updaters that I exist and should update the folder I am sat in to be filled with Luna server files! If you are reading me then you have not started using the Luna Manager to operate the server which will upset the great god Zeus and he shall rain a eternal damnation of you and your kerbals. Your Pa's will never be perfectly circlular and you will be forced to forget vital parts of your staging causing complete restarts of your launches! Now, I dont think anyone wants to go through that. I personally would hate to see someone fight fruitlessly towards the great gods and be banished from being able to reach the stars. But, This is clearly a warning to be taken seriously before its too late!");
+                            Byte[] exeStub = new UTF8Encoding(true).GetBytes("Hi, thanks for all the fish! I am a stub until you boot the Luna Manager or run the  Server Updater independently. I do nothing, but tell our updaters that I exist! And should update the folder I am sat in to be filled with Luna server files! If you are reading me then you have not started using the Luna Manager to operate the server which will upset the great god Zeus and he shall rain a eternal damnation of you and your kerbals. Your Pa's will never be perfectly circlular and you will be forced to forget vital parts of your staging causing complete restarts of your launches! Now, I dont think anyone wants to go through that. I personally would hate to see someone fight fruitlessly towards the great gods and be banished from being able to reach the stars. But, This is clearly a warning to be taken seriously before its too late!");
                             // Luna Updater requires Server.exe to be in directory, this creates the application as a stub for update.
                             fs.Write(exeStub, 0, exeStub.Length);
                         }
                     }
                     Console.BackgroundColor = ConsoleColor.DarkGreen;
-                        Console.WriteLine("-----------------===========FINISHED===========-----------------");
-                        Console.ResetColor();
-                    }
-                    catch (Exception e)
-                    {
-                        Console.BackgroundColor = ConsoleColor.Red;
-                        Console.WriteLine(e);
-                        CleanTempServerFiles();
-                        throw;
-                    }
-                    finally
-                    {
-                        CleanTempServerFiles();
-                    }  
+                    Console.WriteLine("-----------------===========FINISHED===========-----------------");
+                    Console.ResetColor();
+                }
+                catch (Exception e)
+                {
+                    Console.BackgroundColor = ConsoleColor.Red;
+                    Console.WriteLine(e);
+                    CleanTempServerFiles();
+                    throw;
+                }
+                finally
+                {
+                    CleanTempServerFiles();
+                }
 
             }
             else
             {
-                clearScreen();
+                ClearScreen();
             }
 
         }
@@ -542,8 +541,8 @@ namespace LunaManager
             var serverFolder = Directory.GetCurrentDirectory() + "\\Server";
             foreach (var dirPath in Directory.GetDirectories(Path.Combine(ServerFolderToDecompress, productFolderName), "*", SearchOption.AllDirectories))
             {
-                    string destFolder = dirPath.Replace(Path.Combine(ServerFolderToDecompress, productFolderName), serverFolder);
-                    Console.WriteLine($"Creating dest folder: {destFolder}");
+                string destFolder = dirPath.Replace(Path.Combine(ServerFolderToDecompress, productFolderName), serverFolder);
+                Console.WriteLine($"Creating dest folder: {destFolder}");
 
             }
 
