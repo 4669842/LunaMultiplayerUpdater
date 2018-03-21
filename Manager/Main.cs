@@ -10,7 +10,7 @@ using System.Security.AccessControl;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-
+using System.Xml;
 namespace LunaManager
 {
     /// <summary>
@@ -24,20 +24,29 @@ namespace LunaManager
         public static string ClientFolderToDecompress = Path.Combine(Path.GetTempPath(), "LMPClientUpdater");
         public static string ServerFolderToDecompress = Path.Combine(Path.GetTempPath(), "LMPServerUpdater");
         public const string FileName = "LunaMultiplayerUpdater-Release.zip";
-        private const string ServerArg = "-server";
         public static string ProjectUrl = $"{ApiUrl}/LunaMultiplayerUpdater-Release.zip";
         public static object Downloader { get; private set; }
         public static object product { get; private set; }
+        public static int installed { get; private set; }
+        public static string lunaUpdater { get; private set; }
 
         [STAThread]
         static void Main()
         {
             String[] arguments = Environment.GetCommandLineArgs();
-            foreach (string startupArg in arguments)
+            foreach (String CommandArgs in arguments)
             {
-                if (arguments.Contains(ServerArg))
+                if (arguments.Contains("-server"))
                 {
-
+                    LunaServerCheck();
+                    LunaSafeServerUpdate();
+                    RunLunaServer();
+                }
+                if (arguments.Contains("-client"))
+                {
+                    LunaClientCheck();
+                    lunaSafeClientUpdate();
+    
                 }
             }
             InstallDirCheck();
@@ -113,7 +122,6 @@ namespace LunaManager
                 Console.ForegroundColor = ConsoleColor.Red;
                 Console.Write(ex.Message);
             }
-
         }
 
         private static void KerbalSafeLaunch()
@@ -135,13 +143,17 @@ namespace LunaManager
 
         private static void LunaSafeServerUpdate()
         {
+           
             ClearScreen();
             SanityCheck();
+            installed++;
+            Console.WriteLine(installed);
             LunaServerUpdate();
         }
         private static void ClientMenu()
         {
             Console.WriteLine("Welcome to a Kerbal Space Program CLI. This is for actively updating Luna Multiplayer during beta testing. \nBelow are some options that will hopefully make things a lot more simpler.");
+            
             Console.WriteLine("Options:");
             Console.ResetColor();
             ShowClientCommands();
@@ -202,11 +214,74 @@ namespace LunaManager
                 ClearScreen();
                 ClientMenu();
             }
+            if (input == 000)
+            {
+                ClearScreen();
+               UninstallLuna();
+            }
             else
                 Console.ForegroundColor = ConsoleColor.Red;
             Console.WriteLine("Invalid Option\n");
             Console.ResetColor();
             ServerMenu();
+        }
+
+        private static void UninstallLuna()
+        {
+            Console.WriteLine("============= Sad to see you go =============");
+            Console.WriteLine("Which would you like to remove?");
+            Console.WriteLine("1. Luna Client");
+            Console.WriteLine("2. Luna Server");
+            var input = int.Parse(Console.ReadLine());
+            if (input == 1)
+            {
+                if (Directory.Exists(@"GameData\LunaMultiplayer"))
+                {
+                    Directory.Delete(@"GameData\LunaMultiplayer");
+                }
+                if (File.Exists(@"ClientUpdater.exe"))
+                {
+                    File.Delete(@"ClientUpdater.exe");
+                }
+                if (File.Exists(@"CommonUpdater.dll"))
+                {
+                    File.Delete(@"CommonUpdater.dll");
+                }
+
+            }
+            if (input == 2)
+            {
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine("This will purge your /Server folder leaving anything not backed up, gone forever! Are you sure you wish to delete?");
+                var confirm  = (Console.ReadLine());
+                if (confirm == "y" | confirm == "Y" | confirm == "YES" | confirm == "yes")
+                {
+                    try
+                    {
+                        if (Directory.Exists(Directory.GetCurrentDirectory() + "\\Server"))
+                        {
+
+                            foreach (Process proc in Process.GetProcessesByName("LMPServer"))
+                            {
+                                proc.Kill();
+                                Console.BackgroundColor = ConsoleColor.Green;
+                                Console.WriteLine("Luna Server was found running and has been killed. Continuing to uninstall");
+                                Console.ResetColor();
+                            }
+                            Directory.Delete(Directory.GetCurrentDirectory() + "\\Server");
+                            Console.WriteLine("============= Files have been removed =============");
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.ForegroundColor = ConsoleColor.Red;
+                        Console.Write(ex.Message);
+                    }
+              
+                }else
+                { Console.WriteLine("Removal Cancalled"); }
+
+            }
         }
 
         private static void ConfigureServer()
@@ -315,11 +390,21 @@ namespace LunaManager
         }
         private static void ShowServerCommands()
         {
+            int fCount = Directory.GetFiles("Server", "*", SearchOption.AllDirectories).Length;
+
             ClearScreen();
             Console.ForegroundColor = ConsoleColor.Magenta;
-            Console.WriteLine("1. Install/Update LunaMultiplayer");
-            Console.WriteLine("2. Start up Luna Server ");
-            Console.WriteLine("3. Configure LunaMultiplayer");
+            if (fCount == 3)
+            {
+                Console.WriteLine("1. Install LunaMultiplayer");
+            }
+            else if (fCount > 3)
+            {
+                Console.WriteLine("1. Update LunaMultiplayer");
+                Console.WriteLine("2. Start up Luna Server ");
+                Console.WriteLine("3. Configure LunaMultiplayer");
+            }
+            Console.ForegroundColor = ConsoleColor.DarkGreen;
             Console.WriteLine("4. Return to Luna Client options");
             Console.ResetColor();
         }
@@ -345,18 +430,18 @@ namespace LunaManager
 
         private static void LunaClientUpdate()
         {
-            string lunaUpdater = @"ClientUpdater.exe";
+            string lunaClientUpdater = @"ClientUpdater.exe";
             InstallDirCheck();
             SanityCheck();
             LunaClientCheck();
-            var lunaProcess = new Process();
-            lunaProcess.StartInfo = new ProcessStartInfo(lunaUpdater)
+            var lunaClientProcess = new Process();
+            lunaClientProcess.StartInfo = new ProcessStartInfo(lunaClientUpdater)
             {
                 UseShellExecute = false
             };
 
-            lunaProcess.Start();
-            lunaProcess.WaitForExit();
+            lunaClientProcess.Start();
+            lunaClientProcess.WaitForExit();
             ClientMenu();
 
         }
@@ -365,14 +450,18 @@ namespace LunaManager
         {
             SanityCheck();
             LunaServerCheck();
-
-            ProcessStartInfo _processStartInfo = new ProcessStartInfo();
-            _processStartInfo.WorkingDirectory = @"Server";
-            _processStartInfo.FileName = @"ServerUpdater.exe";
-            _processStartInfo.CreateNoWindow = false;
-            _processStartInfo.UseShellExecute = true;
-            Process serverUpdater = Process.Start(_processStartInfo);
-            serverUpdater.WaitForExit();
+            string lunaServerUpdater = @"ServerUpdater.exe";
+            var lunaServerUpdateProcess = new Process();
+            lunaServerUpdateProcess.StartInfo = new ProcessStartInfo(lunaServerUpdater)
+            {
+                WorkingDirectory = @"Server",
+                FileName = lunaServerUpdater,
+                CreateNoWindow = false,
+                UseShellExecute = true
+            };
+            lunaServerUpdateProcess.Start();
+            lunaServerUpdateProcess.WaitForExit();
+            
             ServerMenu();
 
         }
@@ -384,13 +473,17 @@ namespace LunaManager
 
             try
             {
-
-                ProcessStartInfo _processStartInfo = new ProcessStartInfo();
-                _processStartInfo.WorkingDirectory = @"Server";
-                _processStartInfo.FileName = @"Server.exe";
-                _processStartInfo.CreateNoWindow = true;
-                _processStartInfo.UseShellExecute = true;
-                Process myProcess = Process.Start(_processStartInfo);
+                string lunaServer = @"Server.exe";
+                var lunaServerProcess = new Process();
+                lunaServerProcess.StartInfo = new ProcessStartInfo(lunaServer)
+                {
+                    WorkingDirectory = @"Server",
+                    FileName = lunaServer,
+                    CreateNoWindow = false,
+                    UseShellExecute = true
+                };
+                lunaServerProcess.Start();
+                lunaServerProcess.WaitForExit();
             }
             catch (Exception e)
             {
@@ -462,9 +555,9 @@ namespace LunaManager
         private static void LunaServerCheck()
         {
             string lunaUpdater = @"ServerUpdater.exe";
-
             if (!File.Exists(Path.Combine(Directory.GetCurrentDirectory(), "Server", lunaUpdater)))
             {
+                installed = 0;
                 Console.ForegroundColor = ConsoleColor.Red;
                 Console.WriteLine(" The file \"ServerUpdater.exe\" is not in the Luna Server folder...");
                 Console.ResetColor();
@@ -501,6 +594,7 @@ namespace LunaManager
                             fs.Write(exeStub, 0, exeStub.Length);
                         }
                     }
+                    installed++;
                     Console.BackgroundColor = ConsoleColor.DarkGreen;
                     Console.WriteLine("-----------------===========FINISHED===========-----------------");
                     Console.ResetColor();
@@ -514,12 +608,15 @@ namespace LunaManager
                 }
                 finally
                 {
+                    installed = 1;
                     CleanTempServerFiles();
                 }
 
             }
             else
             {
+
+                installed = 1;
                 ClearScreen();
             }
 
