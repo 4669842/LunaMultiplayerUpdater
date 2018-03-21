@@ -1,7 +1,9 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.IO.Compression;
+using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Security.AccessControl;
@@ -22,6 +24,7 @@ namespace LunaManager
         public static string ClientFolderToDecompress = Path.Combine(Path.GetTempPath(), "LMPClientUpdater");
         public static string ServerFolderToDecompress = Path.Combine(Path.GetTempPath(), "LMPServerUpdater");
         public const string FileName = "LunaMultiplayerUpdater-Release.zip";
+        private const string ServerArg = "-server";
         public static string ProjectUrl = $"{ApiUrl}/LunaMultiplayerUpdater-Release.zip";
         public static object Downloader { get; private set; }
         public static object product { get; private set; }
@@ -29,7 +32,14 @@ namespace LunaManager
         [STAThread]
         static void Main()
         {
-            thread = new Thread(Main);
+            String[] arguments = Environment.GetCommandLineArgs();
+            foreach (string startupArg in arguments)
+            {
+                if (arguments.Contains(ServerArg))
+                {
+
+                }
+            }
             InstallDirCheck();
             SanityCheck();
             LunaClientCheck();
@@ -55,10 +65,6 @@ namespace LunaManager
                 Console.WriteLine("The manager will now end until this is resolved.");
                 var input = Console.ReadLine();
                 Environment.Exit(0);
-            }
-            else
-            {
-                Console.WriteLine("Successfully checked the directory and noticed some kerbals!");
             }
         }
         private static void SanityCheck()
@@ -131,13 +137,12 @@ namespace LunaManager
         {
             ClearScreen();
             SanityCheck();
-            InstallDirCheck();
             LunaServerUpdate();
         }
         private static void ClientMenu()
         {
             Console.WriteLine("Welcome to a Kerbal Space Program CLI. This is for actively updating Luna Multiplayer during beta testing. \nBelow are some options that will hopefully make things a lot more simpler.");
-            Console.WriteLine("Here are your options:");
+            Console.WriteLine("Options:");
             Console.ResetColor();
             ShowClientCommands();
 
@@ -145,11 +150,13 @@ namespace LunaManager
             var input = int.Parse(Console.ReadLine());
             if (input == 1)
             {
+                ClearScreen();
                 KerbalSafeLaunch();
 
             }
             if (input == 2)
             {
+                ClearScreen();
                 lunaSafeClientUpdate();
             }
             if (input == 3)
@@ -356,10 +363,8 @@ namespace LunaManager
 
         private static void LunaServerUpdate()
         {
-
-            InstallDirCheck();
             SanityCheck();
-            LunaClientCheck();
+            LunaServerCheck();
 
             ProcessStartInfo _processStartInfo = new ProcessStartInfo();
             _processStartInfo.WorkingDirectory = @"Server";
@@ -368,13 +373,13 @@ namespace LunaManager
             _processStartInfo.UseShellExecute = true;
             Process serverUpdater = Process.Start(_processStartInfo);
             serverUpdater.WaitForExit();
-            ClientMenu();
+            ServerMenu();
 
         }
         private static void RunLunaServer()
         {
     
-            InstallDirCheck();
+     
             SanityCheck();
 
             try
