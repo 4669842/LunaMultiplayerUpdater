@@ -23,7 +23,8 @@
 2) Put the LunaManager.exe in your KSP folder. Create a shortcut to your taskbar if you want a easy way to access. 
 
 ---
-<iframe width="640" height="360" src="https://www.youtube.com/embed/_OuyfPGKIfU?rel=0" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen></iframe>
+[![Demo of Luna Manager in action](https://img.youtube.com/vi/_OuyfPGKIfU/0.jpg)](https://www.youtube.com/watch?v=_OuyfPGKIfU)
+
 ### Status: [![AppVeyor](https://img.shields.io/appveyor/ci/gavazquez/lunamultiplayerupdater/master.svg?logo=appveyor)](https://ci.appveyor.com/project/gavazquez/lunamultiplayerupdater/branch/master)
 
 ---
