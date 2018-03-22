@@ -1,16 +1,14 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
-using System.Security.AccessControl;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Xml;
+
 namespace LunaManager
 {
     /// <summary>
@@ -19,55 +17,153 @@ namespace LunaManager
     /// </summary>
     class MainMenu
     {
-        private static Thread thread;
         public const string ApiUrl = "https://github.com/LunaMultiplayer/LunaMultiplayerUpdater/releases/download/1.0.0";
-        public static string ClientFolderToDecompress = Path.Combine(Path.GetTempPath(), "LMPClientUpdater");
-        public static string ServerFolderToDecompress = Path.Combine(Path.GetTempPath(), "LMPServerUpdater");
         public const string FileName = "LunaMultiplayerUpdater-Release.zip";
-        public static string ProjectUrl = $"{ApiUrl}/LunaMultiplayerUpdater-Release.zip";
-        public static object Downloader { get; private set; }
-        public static object product { get; private set; }
-        public static int installed { get; private set; }
-        public static string lunaUpdater { get; private set; }
 
-        [STAThread]
-        static void Main()
+        private static Thread thread;
+        public static string ClientFolderToDecompress = Path.Combine(Path.GetTempPath(), "LMPClientUpdater");
+        public static string ProjectUrl = ($"{ApiUrl}/LunaMultiplayerUpdater-Release.zip");
+        public static string ServerFolderToDecompress = Path.Combine(Path.GetTempPath(), "LMPServerUpdater");
+
+        private static void CleanTempClientFiles()
         {
-            String[] arguments = Environment.GetCommandLineArgs();
-            foreach (String CommandArgs in arguments)
+            try
             {
-                if (arguments.Contains("-server"))
-                {
-                    LunaServerCheck();
-                    LunaSafeServerUpdate();
-                    RunLunaServer();
-                }
-                if (arguments.Contains("-client"))
-                {
-                    LunaClientCheck();
-                    lunaSafeClientUpdate();
-    
-                }
+                if(Directory.Exists(ClientFolderToDecompress))
+                    Directory.Delete(ClientFolderToDecompress, true);
+            } catch(Exception e)
+            {
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine(e);
             }
-            InstallDirCheck();
-            SanityCheck();
-            LunaClientCheck();
-            ClientMenu();
 
+            File.Delete(Path.Combine(Path.GetTempPath(), FileName));
         }
 
-        public enum ProductToDownload
+        private static void CleanTempServerFiles()
         {
-            Client,
-            Server
+            try
+            {
+                if(Directory.Exists(ServerFolderToDecompress))
+                    Directory.Delete(ServerFolderToDecompress, true);
+            } catch(Exception e)
+            {
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine(e);
+            }
+
+            File.Delete(Path.Combine(Path.GetTempPath(), FileName));
         }
+
+        private static void ClearScreen()
+        {
+            Console.ResetColor();
+            Console.Clear();
+        }
+
+        private static void ClientMenu()
+        {
+            Console.WriteLine("Welcome to a Kerbal Space Program CLI. This is for actively updating Luna Multiplayer during beta testing. \nBelow are some options that will hopefully make things a lot more simpler.");
+
+            Console.WriteLine("Options:");
+            Console.ResetColor();
+            ShowClientCommands();
+
+            Console.WriteLine("Enter a number to choose:");
+            var input = int.Parse(Console.ReadLine());
+            if(input == 1)
+            {
+                ClearScreen();
+                KerbalSafeLaunch();
+            }
+            if(input == 2)
+            {
+                ClearScreen();
+                lunaSafeClientUpdate();
+            }
+            if(input == 3)
+            {
+                ClearScreen();
+                ServerMenu();
+            } else
+                Console.ForegroundColor = ConsoleColor.Red;
+            Console.WriteLine("Invalid Option\n");
+            Console.ResetColor();
+            ClientMenu();
+        }
+
+        private static void ConfigureServer()
+        {
+            ClearScreen();
+            Console.WriteLine("Welcome to the luna server configurator! You can either load a pre existing configuration or create a new one!");
+            Console.WriteLine("============= Feature Coming Soon =============");
+        }
+
+        private static void CopyClientFilesFromTempToDestination()
+        {
+            var productFolderName = "LMPClientUpdater";
+            foreach(var dirPath in Directory.GetDirectories(Path.Combine(ClientFolderToDecompress, productFolderName),
+                                                            "*",
+                                                            SearchOption.AllDirectories))
+            {
+                var destFolder = dirPath.Replace(Path.Combine(ClientFolderToDecompress, productFolderName),
+                                                 Directory.GetCurrentDirectory());
+                Console.WriteLine($"Creating dest folder: {destFolder}");
+                Directory.CreateDirectory(destFolder);
+            }
+            foreach(var newPath in Directory.GetFiles(Path.Combine(ClientFolderToDecompress, productFolderName),
+                                                      "*.*",
+                                                      SearchOption.AllDirectories))
+            {
+                var destPath = newPath.Replace(Path.Combine(ClientFolderToDecompress, productFolderName),
+                                               Directory.GetCurrentDirectory());
+                Console.WriteLine($"Copying {Path.GetFileName(newPath)} to {destPath}");
+                File.Copy(newPath, destPath, true);
+            }
+        }
+
+        private static void CopyServerFilesFromTempToDestination()
+        {
+            var productFolderName = "LMPServerUpdater";
+            var serverFolder = (Directory.GetCurrentDirectory() + "\\Server");
+            foreach(var dirPath in Directory.GetDirectories(Path.Combine(ServerFolderToDecompress, productFolderName),
+                                                            "*",
+                                                            SearchOption.AllDirectories))
+            {
+                string destFolder = dirPath.Replace(Path.Combine(ServerFolderToDecompress, productFolderName),
+                                                    serverFolder);
+                Console.WriteLine($"Creating dest folder: {destFolder}");
+            }
+
+            foreach(var newPath in Directory.GetFiles(Path.Combine(ServerFolderToDecompress, productFolderName),
+                                                      "*.*",
+                                                      SearchOption.AllDirectories))
+            {
+                var destPath = newPath.Replace(Path.Combine(ServerFolderToDecompress, productFolderName), serverFolder);
+                Console.WriteLine($"Copying {Path.GetFileName(newPath)} to {destPath}");
+                File.Copy(newPath, destPath, true);
+            }
+        }
+
+        private static async Task<string> GetDownloadUrl(HttpClient client)
+        {
+            using(HttpResponseMessage response = (await client.GetAsync(ProjectUrl)))
+            {
+                response.EnsureSuccessStatusCode();
+
+                string content = (await response.Content.ReadAsStringAsync());
+            }
+
+            return null;
+        }
+
         private static void InstallDirCheck()
         {
             string path = AppDomain.CurrentDomain.BaseDirectory;
             string folder = new DirectoryInfo(path).Name;
-           
+
             string target = @"Kerbal Space Program";
-            if (folder != target)
+            if(folder != target)
             {
                 Console.ForegroundColor = ConsoleColor.Red;
                 Console.WriteLine("HALT\nThis is not the Kerbal Space Program Folder! ");
@@ -76,52 +172,19 @@ namespace LunaManager
                 Environment.Exit(0);
             }
         }
-        private static void SanityCheck()
+
+        private static void KerbalLaunch()
         {
-            try
-            {
-                foreach (Process proc in Process.GetProcessesByName("KSP_x64"))
-                {
-                    proc.Kill();
-                    Console.BackgroundColor = ConsoleColor.Green;
-                    Console.WriteLine("Kerbal Space Program was found running and has been killed.");
-                    Console.ResetColor();
-                }
-            }
-            catch (Exception ex)
-            {
-                Console.Write(ex.Message);
-            }
-            try
-            {
-                foreach (Process proc in Process.GetProcessesByName("KSP"))
-                {
-                    proc.Kill();
-                    Console.BackgroundColor = ConsoleColor.Green;
-                    Console.WriteLine("Kerbal Space Program was found running and has been killed.");
-                    Console.ResetColor();
-                }
-            }
-            catch (Exception ex)
-            {
-                Console.ForegroundColor = ConsoleColor.Red;
-                Console.Write(ex.Message);
-            }
-            try
-            {
-                foreach (Process proc in Process.GetProcessesByName("Updater"))
-                {
-                    proc.Kill();
-                    Console.BackgroundColor = ConsoleColor.Green;
-                    Console.WriteLine("Luna Updater was found running and has been killed.");
-                    Console.ResetColor();
-                }
-            }
-            catch (Exception ex)
-            {
-                Console.ForegroundColor = ConsoleColor.Red;
-                Console.Write(ex.Message);
-            }
+            InstallDirCheck();
+            SanityCheck();
+            Console.BackgroundColor = ConsoleColor.Green;
+            Console.WriteLine("Booting Kerbal Space Program");
+            string kerbal64 = @"KSP_x64.exe";
+            if(File.Exists(kerbal64))
+                Process.Start(kerbal64); else
+                Console.WriteLine("Can not start Kerbal Space Program. Did you place this in the KSP installation folder?");
+            Console.ResetColor();
+            ClientMenu();
         }
 
         private static void KerbalSafeLaunch()
@@ -132,372 +195,12 @@ namespace LunaManager
             LunaClientCheck();
             KerbalLaunch();
         }
-        private static void lunaSafeClientUpdate()
-        {
-            ClearScreen();
-            SanityCheck();
-            InstallDirCheck();
-            LunaClientCheck();
-            LunaClientUpdate();
-        }
-
-        private static void LunaSafeServerUpdate()
-        {
-           
-            ClearScreen();
-            SanityCheck();
-            installed++;
-            Console.WriteLine(installed);
-            LunaServerUpdate();
-        }
-        private static void ClientMenu()
-        {
-            Console.WriteLine("Welcome to a Kerbal Space Program CLI. This is for actively updating Luna Multiplayer during beta testing. \nBelow are some options that will hopefully make things a lot more simpler.");
-            
-            Console.WriteLine("Options:");
-            Console.ResetColor();
-            ShowClientCommands();
-
-            Console.WriteLine("Enter a number to choose:");
-            var input = int.Parse(Console.ReadLine());
-            if (input == 1)
-            {
-                ClearScreen();
-                KerbalSafeLaunch();
-
-            }
-            if (input == 2)
-            {
-                ClearScreen();
-                lunaSafeClientUpdate();
-            }
-            if (input == 3)
-            {
-                ClearScreen();
-                ServerMenu();
-            }
-            else
-                Console.ForegroundColor = ConsoleColor.Red;
-            Console.WriteLine("Invalid Option\n");
-            Console.ResetColor();
-            ClientMenu();
-        }
-        private static void ServerMenu()
-        {
-            thread = new Thread(ServerMenu);
-            LunaServerCheck();
-            Console.WriteLine("Here you can operate and manage your Luna Multiplayer servers by choosing one of the options below.");
-            Console.WriteLine("Options:");
-            Console.ResetColor();
-            ShowServerCommands();
-
-            Console.WriteLine("Enter a number to choose:");
-            var input = int.Parse(Console.ReadLine());
-            if (input == 1)
-            {
-
-                LunaSafeServerUpdate();
-            }
-            if (input == 2)
-            {
-                thread = new Thread(RunLunaServer);
-                ClearScreen();
-
-                RunLunaServer();
-            }
-            if (input == 3)
-            {
-                ConfigureServer();
-            }
-            if (input == 4)
-            {
-                ClearScreen();
-                ClientMenu();
-            }
-            if (input == 000)
-            {
-                ClearScreen();
-               UninstallLuna();
-            }
-            else
-                Console.ForegroundColor = ConsoleColor.Red;
-            Console.WriteLine("Invalid Option\n");
-            Console.ResetColor();
-            ServerMenu();
-        }
-
-        private static void UninstallLuna()
-        {
-            Console.WriteLine("============= Sad to see you go =============");
-            Console.WriteLine("Which would you like to remove?");
-            Console.WriteLine("1. Luna Client");
-            Console.WriteLine("2. Luna Server");
-            var input = int.Parse(Console.ReadLine());
-            if (input == 1)
-            {
-                if (Directory.Exists(@"GameData\LunaMultiplayer"))
-                {
-                    Directory.Delete(@"GameData\LunaMultiplayer");
-                }
-                if (File.Exists(@"ClientUpdater.exe"))
-                {
-                    File.Delete(@"ClientUpdater.exe");
-                }
-                if (File.Exists(@"CommonUpdater.dll"))
-                {
-                    File.Delete(@"CommonUpdater.dll");
-                }
-
-            }
-            if (input == 2)
-            {
-                Console.ForegroundColor = ConsoleColor.Red;
-                Console.WriteLine("This will purge your /Server folder leaving anything not backed up, gone forever! Are you sure you wish to delete?");
-                var confirm  = (Console.ReadLine());
-                if (confirm == "y" | confirm == "Y" | confirm == "YES" | confirm == "yes")
-                {
-                    try
-                    {
-                        if (Directory.Exists(Directory.GetCurrentDirectory() + "\\Server"))
-                        {
-
-                            foreach (Process proc in Process.GetProcessesByName("LMPServer"))
-                            {
-                                proc.Kill();
-                                Console.BackgroundColor = ConsoleColor.Green;
-                                Console.WriteLine("Luna Server was found running and has been killed. Continuing to uninstall");
-                                Console.ResetColor();
-                            }
-                            Directory.Delete(Directory.GetCurrentDirectory() + "\\Server");
-                            Console.WriteLine("============= Files have been removed =============");
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        Console.ForegroundColor = ConsoleColor.Red;
-                        Console.Write(ex.Message);
-                    }
-              
-                }else
-                { Console.WriteLine("Removal Cancalled"); }
-
-            }
-        }
-
-        private static void ConfigureServer()
-        {
-            ClearScreen();
-            Console.WriteLine("Welcome to the luna server configurator! You can either load a pre existing configuration or create a new one!");
-            Console.WriteLine("============= Feature Coming Soon =============");
-        }
-        private static void CleanTempClientFiles()
-        {
-            try
-            {
-                if (Directory.Exists(ClientFolderToDecompress))
-                    Directory.Delete(ClientFolderToDecompress, true);
-            }
-            catch (Exception e)
-            {
-                Console.ForegroundColor = ConsoleColor.Red;
-                Console.WriteLine(e);
-            }
-
-            File.Delete(Path.Combine(Path.GetTempPath(), FileName));
-        }
-        private static void CleanTempServerFiles()
-        {
-            try
-            {
-                if (Directory.Exists(ServerFolderToDecompress))
-                    Directory.Delete(ServerFolderToDecompress, true);
-            }
-            catch (Exception e)
-            {
-                Console.ForegroundColor = ConsoleColor.Red;
-                Console.WriteLine(e);
-            }
-
-            File.Delete(Path.Combine(Path.GetTempPath(), FileName));
-        }
-
-        private static async Task<string> GetDownloadUrl(HttpClient client)
-        {
-
-            using (HttpResponseMessage response = await client.GetAsync(ProjectUrl))
-            {
-                response.EnsureSuccessStatusCode();
-
-                string content = await response.Content.ReadAsStringAsync();
-            }
-
-            return null;
-        }
-
-        public static void DownloadAndReplaceFiles(ProductToDownload product)
-        {
-            string downloadUrl;
-            using (var client = new HttpClient { Timeout = TimeSpan.FromSeconds(30) })
-            {
-                downloadUrl = GetDownloadUrl(client).Result;
-            }
-
-            if (!string.IsNullOrEmpty(downloadUrl))
-            {
-                Console.ForegroundColor = ConsoleColor.Green;
-                Console.WriteLine($"Downloading LMP from: {downloadUrl} Please wait...");
-                try
-                {
-                    CleanTempClientFiles();
-                    CleanTempServerFiles();
-                    using (var client = new WebClient())
-                    {
-                        client.DownloadFile(downloadUrl, Path.Combine(Path.GetTempPath(), FileName));
-                        Console.WriteLine($"Downloading succeeded! Path: {Path.Combine(Path.GetTempPath(), FileName)}");
-                    }
-
-                    Console.WriteLine($"Decompressing file to {ClientFolderToDecompress}");
-                    ZipFile.ExtractToDirectory(Path.Combine(Path.GetTempPath(), FileName), ClientFolderToDecompress);
-
-                    CopyClientFilesFromTempToDestination();
-                    CopyServerFilesFromTempToDestination();
-                    Console.ForegroundColor = ConsoleColor.Green;
-                    Console.WriteLine("-----------------===========FINISHED===========-----------------");
-                }
-                catch (Exception e)
-                {
-                    Console.ForegroundColor = ConsoleColor.Red;
-                    Console.WriteLine(e);
-                    Console.ResetColor();
-                    throw;
-
-                }
-                finally
-                {
-                    CleanTempClientFiles();
-                    CleanTempServerFiles();
-                }
-            }
-        }
-
-        private static void ShowClientCommands()
-        {
-            Console.ForegroundColor = ConsoleColor.Magenta;
-            Console.WriteLine("1. Start up Kerbal Space Program ");
-            Console.WriteLine("2. Install/Update LunaMultiplayer");
-            Console.WriteLine("3. Run LunaMultiplayer Server");
-            Console.ResetColor();
-        }
-        private static void ShowServerCommands()
-        {
-            int fCount = Directory.GetFiles("Server", "*", SearchOption.AllDirectories).Length;
-
-            ClearScreen();
-            Console.ForegroundColor = ConsoleColor.Magenta;
-            if (fCount == 3)
-            {
-                Console.WriteLine("1. Install LunaMultiplayer");
-            }
-            else if (fCount > 3)
-            {
-                Console.WriteLine("1. Update LunaMultiplayer");
-                Console.WriteLine("2. Start up Luna Server ");
-                Console.WriteLine("3. Configure LunaMultiplayer");
-            }
-            Console.ForegroundColor = ConsoleColor.DarkGreen;
-            Console.WriteLine("4. Return to Luna Client options");
-            Console.ResetColor();
-        }
-        private static void KerbalLaunch()
-        {
-            InstallDirCheck();
-            SanityCheck();
-            Console.BackgroundColor = ConsoleColor.Green;
-            Console.WriteLine("Booting Kerbal Space Program");
-            string kerbal64 = @"KSP_x64.exe";
-            if (File.Exists(kerbal64))
-                Process.Start(kerbal64);
-            else
-                Console.WriteLine("Can not start Kerbal Space Program. Did you place this in the KSP installation folder?");
-            Console.ResetColor();
-            ClientMenu();
-        }
-        private static void ClearScreen()
-        {
-            Console.ResetColor();
-            Console.Clear();
-        }
-
-        private static void LunaClientUpdate()
-        {
-            string lunaClientUpdater = @"ClientUpdater.exe";
-            InstallDirCheck();
-            SanityCheck();
-            LunaClientCheck();
-            var lunaClientProcess = new Process();
-            lunaClientProcess.StartInfo = new ProcessStartInfo(lunaClientUpdater)
-            {
-                UseShellExecute = false
-            };
-
-            lunaClientProcess.Start();
-            lunaClientProcess.WaitForExit();
-            ClientMenu();
-
-        }
-
-        private static void LunaServerUpdate()
-        {
-            SanityCheck();
-            LunaServerCheck();
-            string lunaServerUpdater = @"ServerUpdater.exe";
-            var lunaServerUpdateProcess = new Process();
-            lunaServerUpdateProcess.StartInfo = new ProcessStartInfo(lunaServerUpdater)
-            {
-                WorkingDirectory = @"Server",
-                FileName = lunaServerUpdater,
-                CreateNoWindow = false,
-                UseShellExecute = true
-            };
-            lunaServerUpdateProcess.Start();
-            lunaServerUpdateProcess.WaitForExit();
-            
-            ServerMenu();
-
-        }
-        private static void RunLunaServer()
-        {
-    
-     
-            SanityCheck();
-
-            try
-            {
-                string lunaServer = @"Server.exe";
-                var lunaServerProcess = new Process();
-                lunaServerProcess.StartInfo = new ProcessStartInfo(lunaServer)
-                {
-                    WorkingDirectory = @"Server",
-                    FileName = lunaServer,
-                    CreateNoWindow = false,
-                    UseShellExecute = true
-                };
-                lunaServerProcess.Start();
-                lunaServerProcess.WaitForExit();
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine(e.Message);
-            }
-          
-            ServerMenu();
-        }
 
         private static void LunaClientCheck()
         {
             string lunaUpdater = @"ClientUpdater.exe";
 
-            if (!File.Exists(Path.Combine(Directory.GetCurrentDirectory(), lunaUpdater)))
+            if(!File.Exists(Path.Combine(Directory.GetCurrentDirectory(), lunaUpdater)))
             {
                 Console.ForegroundColor = ConsoleColor.Red;
                 Console.WriteLine(" The \"ClientUpdater.exe\" is not in the main KSP folder");
@@ -505,10 +208,8 @@ namespace LunaManager
                 Console.WriteLine("Installing Luna Updater....");
                 string zipPath = Path.Combine(Directory.GetCurrentDirectory(), "LunaMultiplayerUpdater-Release.zip");
                 string extractPath = Directory.GetCurrentDirectory();
-                {
-                    ProjectUrl = "https://github.com/LunaMultiplayer/LunaMultiplayerUpdater/releases/download/1.0.0/LunaMultiplayerUpdater-Release.zip";
-                    WebClient wb = new WebClient();
-                }
+                ProjectUrl = "https://github.com/LunaMultiplayer/LunaMultiplayerUpdater/releases/download/1.0.0/LunaMultiplayerUpdater-Release.zip";
+                WebClient wb = (new WebClient());
 
                 if (!string.IsNullOrEmpty(ProjectUrl))
                 {
@@ -516,7 +217,7 @@ namespace LunaManager
                     try
                     {
                         CleanTempClientFiles();
-                        using (var client = new WebClient())
+                        using (var client = (new WebClient()))
                         {
                             client.DownloadFile(ProjectUrl, Path.Combine(Path.GetTempPath(), FileName));
                             Console.WriteLine($"Downloading succeeded! Path: {Path.Combine(Path.GetTempPath(), FileName)}");
@@ -543,19 +244,52 @@ namespace LunaManager
                         CleanTempClientFiles();
                     }
                 }
-
             }
             else
             {
                 ClearScreen();
             }
+        }
 
+        private static void LunaClientUpdate()
+        {
+            string lunaClientUpdater = @"ClientUpdater.exe";
+            InstallDirCheck();
+            SanityCheck();
+            LunaClientCheck();
+            var lunaClientProcess = (new Process());
+            lunaClientProcess.StartInfo = (new ProcessStartInfo(lunaClientUpdater)
+            {
+                UseShellExecute = false
+            });
+
+            lunaClientProcess.Start();
+            lunaClientProcess.WaitForExit();
+            ClientMenu();
+        }
+
+        private static void lunaSafeClientUpdate()
+        {
+            ClearScreen();
+            SanityCheck();
+            InstallDirCheck();
+            LunaClientCheck();
+            LunaClientUpdate();
+        }
+
+        private static void LunaSafeServerUpdate()
+        {
+            ClearScreen();
+            SanityCheck();
+            installed++;
+            Console.WriteLine(installed);
+            LunaServerUpdate();
         }
 
         private static void LunaServerCheck()
         {
             string lunaUpdater = @"ServerUpdater.exe";
-            if (!File.Exists(Path.Combine(Directory.GetCurrentDirectory(), "Server", lunaUpdater)))
+            if(!File.Exists(Path.Combine(Directory.GetCurrentDirectory(), "Server", lunaUpdater)))
             {
                 installed = 0;
                 Console.ForegroundColor = ConsoleColor.Red;
@@ -564,17 +298,15 @@ namespace LunaManager
                 Console.WriteLine("Installing Luna Updater....");
 
                 string zipPath = Path.Combine(Directory.GetCurrentDirectory(), "LunaMultiplayerUpdater-Release.zip");
-                string extractPath = Directory.GetCurrentDirectory() + "\\Server";
+                string extractPath = (Directory.GetCurrentDirectory() + "\\Server");
                 Directory.CreateDirectory(extractPath);
-                {
-                    ProjectUrl = "https://github.com/LunaMultiplayer/LunaMultiplayerUpdater/releases/download/1.0.0/LunaMultiplayerUpdater-Release.zip";
-                    WebClient wb = new WebClient();
-                }
+                ProjectUrl = "https://github.com/LunaMultiplayer/LunaMultiplayerUpdater/releases/download/1.0.0/LunaMultiplayerUpdater-Release.zip";
+                WebClient wb = (new WebClient());
                 Console.WriteLine($"Downloading LMP from: {ProjectUrl} Please wait...");
                 try
                 {
                     CleanTempServerFiles();
-                    using (var server = new WebClient())
+                    using (var server = (new WebClient()))
                     {
                         server.DownloadFile(ProjectUrl, Path.Combine(Path.GetTempPath(), FileName));
                         Console.WriteLine($"Downloading succeeded! Path: {Path.Combine(Path.GetTempPath(), FileName)}");
@@ -611,52 +343,322 @@ namespace LunaManager
                     installed = 1;
                     CleanTempServerFiles();
                 }
-
             }
             else
             {
-
                 installed = 1;
                 ClearScreen();
             }
-
         }
-        private static void CopyClientFilesFromTempToDestination()
+
+        private static void LunaServerUpdate()
         {
-            var productFolderName = "LMPClientUpdater";
-            foreach (var dirPath in Directory.GetDirectories(Path.Combine(ClientFolderToDecompress, productFolderName), "*", SearchOption.AllDirectories))
+            SanityCheck();
+            LunaServerCheck();
+            string lunaServerUpdater = @"ServerUpdater.exe";
+            var lunaServerUpdateProcess = (new Process());
+            lunaServerUpdateProcess.StartInfo = (new ProcessStartInfo(lunaServerUpdater)
             {
-                var destFolder = dirPath.Replace(Path.Combine(ClientFolderToDecompress, productFolderName), Directory.GetCurrentDirectory());
-                Console.WriteLine($"Creating dest folder: {destFolder}");
-                Directory.CreateDirectory(destFolder);
+                WorkingDirectory = @"Server",
+                FileName = lunaServerUpdater,
+                CreateNoWindow = false,
+                UseShellExecute = true
+            });
+            lunaServerUpdateProcess.Start();
+            lunaServerUpdateProcess.WaitForExit();
+
+            ServerMenu();
+        }
+
+        [STAThread]
+        static void Main()
+        {
+            String[] arguments = Environment.GetCommandLineArgs();
+            foreach(String CommandArgs in arguments)
+            {
+                if(arguments.Contains("-server"))
+                {
+                    LunaServerCheck();
+                    LunaSafeServerUpdate();
+                    RunLunaServer();
+                }
+                if(arguments.Contains("-client"))
+                {
+                    LunaClientCheck();
+                    lunaSafeClientUpdate();
+                }
             }
-            foreach (var newPath in Directory.GetFiles(Path.Combine(ClientFolderToDecompress, productFolderName), "*.*", SearchOption.AllDirectories))
+            InstallDirCheck();
+            SanityCheck();
+            LunaClientCheck();
+            ClientMenu();
+        }
+
+        private static void RunLunaServer()
+        {
+            SanityCheck();
+
+            try
             {
-                var destPath = newPath.Replace(Path.Combine(ClientFolderToDecompress, productFolderName), Directory.GetCurrentDirectory());
-                Console.WriteLine($"Copying {Path.GetFileName(newPath)} to {destPath}");
-                File.Copy(newPath, destPath, true);
+                string lunaServer = @"Server.exe";
+                var lunaServerProcess = (new Process());
+                lunaServerProcess.StartInfo = (new ProcessStartInfo(lunaServer)
+                {
+                    WorkingDirectory = @"Server",
+                    FileName = lunaServer,
+                    CreateNoWindow = false,
+                    UseShellExecute = true
+                });
+                lunaServerProcess.Start();
+                lunaServerProcess.WaitForExit();
+            } catch(Exception e)
+            {
+                Console.WriteLine(e.Message);
+            }
+
+            ServerMenu();
+        }
+
+        private static void SanityCheck()
+        {
+            try
+            {
+                foreach(Process proc in Process.GetProcessesByName("KSP_x64"))
+                {
+                    proc.Kill();
+                    Console.BackgroundColor = ConsoleColor.Green;
+                    Console.WriteLine("Kerbal Space Program was found running and has been killed.");
+                    Console.ResetColor();
+                }
+            } catch(Exception ex)
+            {
+                Console.Write(ex.Message);
+            }
+            try
+            {
+                foreach(Process proc in Process.GetProcessesByName("KSP"))
+                {
+                    proc.Kill();
+                    Console.BackgroundColor = ConsoleColor.Green;
+                    Console.WriteLine("Kerbal Space Program was found running and has been killed.");
+                    Console.ResetColor();
+                }
+            } catch(Exception ex)
+            {
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.Write(ex.Message);
+            }
+            try
+            {
+                foreach(Process proc in Process.GetProcessesByName("Updater"))
+                {
+                    proc.Kill();
+                    Console.BackgroundColor = ConsoleColor.Green;
+                    Console.WriteLine("Luna Updater was found running and has been killed.");
+                    Console.ResetColor();
+                }
+            } catch(Exception ex)
+            {
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.Write(ex.Message);
             }
         }
-        private static void CopyServerFilesFromTempToDestination()
+
+        private static void ServerMenu()
         {
-            var productFolderName = "LMPServerUpdater";
-            var serverFolder = Directory.GetCurrentDirectory() + "\\Server";
-            foreach (var dirPath in Directory.GetDirectories(Path.Combine(ServerFolderToDecompress, productFolderName), "*", SearchOption.AllDirectories))
-            {
-                string destFolder = dirPath.Replace(Path.Combine(ServerFolderToDecompress, productFolderName), serverFolder);
-                Console.WriteLine($"Creating dest folder: {destFolder}");
+            thread = (new Thread(ServerMenu));
+            LunaServerCheck();
+            Console.WriteLine("Here you can operate and manage your Luna Multiplayer servers by choosing one of the options below.");
+            Console.WriteLine("Options:");
+            Console.ResetColor();
+            ShowServerCommands();
 
+            Console.WriteLine("Enter a number to choose:");
+            var input = int.Parse(Console.ReadLine());
+            if(input == 1)
+            {
+                LunaSafeServerUpdate();
+            }
+            if(input == 2)
+            {
+                thread = (new Thread(RunLunaServer));
+                ClearScreen();
+
+                RunLunaServer();
+            }
+            if(input == 3)
+            {
+                ConfigureServer();
+            }
+            if(input == 4)
+            {
+                ClearScreen();
+                ClientMenu();
+            }
+            if(input == 000)
+            {
+                ClearScreen();
+                UninstallLuna();
+            } else
+                Console.ForegroundColor = ConsoleColor.Red;
+            Console.WriteLine("Invalid Option\n");
+            Console.ResetColor();
+            ServerMenu();
+        }
+
+        private static void ShowClientCommands()
+        {
+            Console.ForegroundColor = ConsoleColor.Magenta;
+            Console.WriteLine("1. Start up Kerbal Space Program ");
+            Console.WriteLine("2. Install/Update LunaMultiplayer");
+            Console.WriteLine("3. Run LunaMultiplayer Server");
+            Console.ResetColor();
+        }
+
+        private static void ShowServerCommands()
+        {
+            int fCount = Directory.GetFiles("Server", "*", SearchOption.AllDirectories).Length;
+
+            ClearScreen();
+            Console.ForegroundColor = ConsoleColor.Magenta;
+            if(fCount == 3)
+            {
+                Console.WriteLine("1. Install LunaMultiplayer");
+            } else if(fCount > 3)
+            {
+                Console.WriteLine("1. Update LunaMultiplayer");
+                Console.WriteLine("2. Start up Luna Server ");
+                Console.WriteLine("3. Configure LunaMultiplayer");
+            }
+            Console.ForegroundColor = ConsoleColor.DarkGreen;
+            Console.WriteLine("4. Return to Luna Client options");
+            Console.ResetColor();
+        }
+
+        private static void UninstallLuna()
+        {
+            Console.WriteLine("============= Sad to see you go =============");
+            Console.WriteLine("Which would you like to remove?");
+            Console.WriteLine("1. Luna Client");
+            Console.WriteLine("2. Luna Server");
+            var input = int.Parse(Console.ReadLine());
+            if(input == 1)
+            {
+                if(Directory.Exists(@"GameData\LunaMultiplayer"))
+                {
+                    Directory.Delete(@"GameData\LunaMultiplayer");
+                }
+                if(File.Exists(@"ClientUpdater.exe"))
+                {
+                    File.Delete(@"ClientUpdater.exe");
+                }
+                if(File.Exists(@"CommonUpdater.dll"))
+                {
+                    File.Delete(@"CommonUpdater.dll");
+                }
+            }
+            if(input == 2)
+            {
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine("This will purge your /Server folder leaving anything not backed up, gone forever! Are you sure you wish to delete?");
+                var confirm = Console.ReadLine();
+                if((confirm == "y") | (confirm == "Y") | (confirm == "YES") | (confirm == "yes"))
+                {
+                    try
+                    {
+                        if(Directory.Exists(Directory.GetCurrentDirectory() + "\\Server"))
+                        {
+                            foreach(Process proc in Process.GetProcessesByName("LMPServer"))
+                            {
+                                proc.Kill();
+                                Console.BackgroundColor = ConsoleColor.Green;
+                                Console.WriteLine("Luna Server was found running and has been killed. Continuing to uninstall");
+                                Console.ResetColor();
+                            }
+                            Directory.Delete(Directory.GetCurrentDirectory() + "\\Server");
+                            Console.WriteLine("============= Files have been removed =============");
+                        }
+                    } catch(Exception ex)
+                    {
+                        Console.ForegroundColor = ConsoleColor.Red;
+                        Console.Write(ex.Message);
+                    }
+                } else
+                {
+                    Console.WriteLine("Removal Cancalled");
+                }
+            }
+        }
+
+        public static void DownloadAndReplaceFiles(ProductToDownload product)
+        {
+            string downloadUrl;
+            using(var client = (new HttpClient { Timeout = TimeSpan.FromSeconds(30) }))
+            {
+                downloadUrl = GetDownloadUrl(client).Result;
             }
 
-            foreach (var newPath in Directory.GetFiles(Path.Combine(ServerFolderToDecompress, productFolderName), "*.*", SearchOption.AllDirectories))
+            if(!string.IsNullOrEmpty(downloadUrl))
             {
-                var destPath = newPath.Replace(Path.Combine(ServerFolderToDecompress, productFolderName), serverFolder);
-                Console.WriteLine($"Copying {Path.GetFileName(newPath)} to {destPath}");
-                File.Copy(newPath, destPath, true);
+                Console.ForegroundColor = ConsoleColor.Green;
+                Console.WriteLine($"Downloading LMP from: {downloadUrl} Please wait...");
+                try
+                {
+                    CleanTempClientFiles();
+                    CleanTempServerFiles();
+                    using(var client = (new WebClient()))
+                    {
+                        client.DownloadFile(downloadUrl, Path.Combine(Path.GetTempPath(), FileName));
+                        Console.WriteLine($"Downloading succeeded! Path: {Path.Combine(Path.GetTempPath(), FileName)}");
+                    }
+
+                    Console.WriteLine($"Decompressing file to {ClientFolderToDecompress}");
+                    ZipFile.ExtractToDirectory(Path.Combine(Path.GetTempPath(), FileName), ClientFolderToDecompress);
+
+                    CopyClientFilesFromTempToDestination();
+                    CopyServerFilesFromTempToDestination();
+                    Console.ForegroundColor = ConsoleColor.Green;
+                    Console.WriteLine("-----------------===========FINISHED===========-----------------");
+                } catch(Exception e)
+                {
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.WriteLine(e);
+                    Console.ResetColor();
+                    throw;
+                } finally
+                {
+                    CleanTempClientFiles();
+                    CleanTempServerFiles();
+                }
             }
+        }
+
+        public static object Downloader
+        {
+            get; private set;
+        }
+
+        public static int installed
+        {
+            get; private set;
+        }
+
+        public static string lunaUpdater
+        {
+            get; private set;
+        }
+
+        public static object Product
+        {
+            get; private set;
+        }
+
+        public enum ProductToDownload
+        {
+            Client,
+            Server
         }
     }
 }
-
 
 

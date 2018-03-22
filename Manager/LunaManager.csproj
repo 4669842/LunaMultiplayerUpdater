@@ -78,7 +78,6 @@
   <ItemGroup>
     <None Include="App.config" />
     <None Include="Properties\app.manifest" />
-    <None Include="System.pfx" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="lib\Logger.cs" />

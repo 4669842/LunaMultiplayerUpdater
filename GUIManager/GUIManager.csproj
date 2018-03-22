@@ -33,7 +33,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="CommonUpdater">
-      <HintPath>..\CommonUpdater\bin\Release\CommonUpdater.dll</HintPath>
+      <HintPath>..\..\..\git\LunaMultiplayerUpdater\CommonUpdater\bin\Release\CommonUpdater.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
