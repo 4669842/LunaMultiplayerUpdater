@@ -7,18 +7,18 @@ using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Text;
-using System.Threading;
 using System.Threading.Tasks;
 using static System.Console;
-
+using System.Reflection;
+using System.Runtime;
 #pragma warning disable CRRSP01 // A misspelled word has been found
 namespace LunaManager
 {
     /// <summary>
     ///     <para>Contains main method.</para>
-    ///     <para>Contains checks and validators for KSP.</para>
+    ///     <para>Contains checks and validated for KSP.</para>
     /// </summary>
-    abstract class MainMenu
+    public abstract class MainMenu
     {
         /// <summary>
         /// </summary>
@@ -108,7 +108,7 @@ namespace LunaManager
 
             WriteLine("Enter a number to choose:");
 
-            var i = int.Parse((ReadLine() != null).ToString());
+            var i = int.Parse(ReadLine() ?? throw new InvalidOperationException());
             if (i == 1)
             {
                 ClearScreen();
@@ -127,11 +127,30 @@ namespace LunaManager
                 ServerMenu();
             }
 
+
+            if (i == 66)
+            {
+                ClearScreen();
+                GUITest();
+            }
             ForegroundColor = ConsoleColor.Red;
 
             WriteLine("Invalid Option\n");
             ResetColor();
             ClientMenu();
+        }
+
+        private static void GUITest()
+        {
+            var DLL = Assembly.LoadFile("F:\\SteamLibrary\\steamapps\\common\\Kerbal Space Program\\LunaLauncher.dll");
+
+            foreach (Type type in DLL.GetExportedTypes())
+            {
+                dynamic c = Activator.CreateInstance(type);
+                c.Output(@"Hello");
+            }
+
+            Console.ReadLine();
         }
 
         /// <summary>
@@ -222,7 +241,7 @@ namespace LunaManager
             string downloadUrl;
             using (var client = (new HttpClient { Timeout = TimeSpan.FromSeconds(30) }))
             {
-                downloadUrl = GetDownloadUrl(client).Result;
+                downloadUrl = GetDownloadUrlAsync(client).Result;
             }
 
             if (!string.IsNullOrEmpty(downloadUrl))
@@ -269,14 +288,18 @@ namespace LunaManager
         /// <summary>
         /// </summary>
         /// <param name="client"></param>
+        /// <exception cref="ArgumentNullException"></exception>
         /// <returns></returns>
-        static async Task<string> GetDownloadUrl(HttpClient client)
+        static async Task<string> GetDownloadUrlAsync(HttpClient client)
         {
-            using (var response = (await client.GetAsync(_projectUrl)))
+            HttpResponseMessage response;
+            HttpResponseMessage httpResponseMessage = await client.GetAsync(_projectUrl).ConfigureAwait(false);
+            if (httpResponseMessage == null) throw new ArgumentNullException(nameof(httpResponseMessage));
+            using (response = httpResponseMessage)
             {
                 response.EnsureSuccessStatusCode();
 
-                return await response.Content.ReadAsStringAsync();
+                return await response.Content.ReadAsStringAsync().ConfigureAwait(false);
             }
         }
 
@@ -291,7 +314,7 @@ namespace LunaManager
             if (folder != target)
             {
                 ForegroundColor = ConsoleColor.Red;
-                WriteLine("HALT\nThis is not the Kerbal Space Program Folder! ");
+                WriteLine("HALT Criminal Scum!\nThis is not the Kerbal Space Program Folder! ");
                 WriteLine("The manager will now end until this is resolved.");
                 ReadLine();
                 Environment.Exit(0);
@@ -346,7 +369,7 @@ namespace LunaManager
                 WriteLine("Installing Luna Updater....");
                 _projectUrl =
                     "https://github.com/LunaMultiplayer/LunaMultiplayerUpdater/releases/download/1.0.0/LunaMultiplayerUpdater-Release.zip";
-                var webClient = new WebClient();
+                using (var unused = new WebClient()) { }
 
 
                 if (!string.IsNullOrEmpty(_projectUrl))
@@ -429,7 +452,7 @@ namespace LunaManager
         static void LunaSafeServerUpdate()
         {
             ClearScreen();
-            SanityCheck();
+            InstallDirCheck();
             Installed++;
             WriteLine(Installed);
             LunaServerUpdate();
@@ -458,14 +481,15 @@ namespace LunaManager
                 try
                 {
                     CleanTempServerFiles();
-                    using (new WebClient()){
-                        webClient.DownloadFile (_projectUrl,
-                                Path.Combine (Path.GetTempPath(),
+                    using (new WebClient())
+                    {
+                        webClient.DownloadFile(_projectUrl,
+                                Path.Combine(Path.GetTempPath(),
                                     FileName));
-                        WriteLine ($"Downloading succeeded! Path: {Path.Combine (Path.GetTempPath(), FileName)}");
+                        WriteLine($"Downloading succeeded! Path: {Path.Combine(Path.GetTempPath(), FileName)}");
                     }
                     WriteLine($"Decompressing file to {ServerFolderToDecompress}");
-                    ZipFile.ExtractToDirectory(Path.Combine(Path.GetTempPath(),FileName),
+                    ZipFile.ExtractToDirectory(Path.Combine(Path.GetTempPath(), FileName),
                                                ServerFolderToDecompress);
                     DownloadAndReplaceFiles(ProductToDownload.Server);
                     CopyServerFilesFromTempToDestination();
@@ -515,46 +539,43 @@ namespace LunaManager
             SanityCheck();
             LunaServerCheck();
             var lunaServerUpdater = @"ServerUpdater.exe";
-            var lunaServerUpdateProcess = (new Process
+            using (var lunaServerUpdateProcess = (new Process
             {
-                StartInfo = (new ProcessStartInfo (lunaServerUpdater)
-                {
-                    WorkingDirectory = @"Server",
-                    FileName         = lunaServerUpdater,
-                    CreateNoWindow   = false,
-                    UseShellExecute  = true
-                })
-            });
-            lunaServerUpdateProcess.Start();
-            lunaServerUpdateProcess.WaitForExit();
+                StartInfo = (new ProcessStartInfo(lunaServerUpdater)
+                { WorkingDirectory = @"Server", FileName = lunaServerUpdater, CreateNoWindow = false, UseShellExecute = true })
+            }))
+            {
+                lunaServerUpdateProcess.Start();
+                lunaServerUpdateProcess.WaitForExit();
 
-            ServerMenu();
+                ServerMenu();
+            }
         }
 
         /// <summary>
         /// </summary>
+        /// <exception cref="InvalidOperationException">Condition.</exception>
         [STAThread]
         static void Main()
+        { MainAsync(); }
+
+        static void MainAsync()
         {
             var arguments = Environment.GetCommandLineArgs();
-            foreach (var unused in arguments)
-            {
-                if (arguments.Contains("-server"))
-                {
+            foreach (var unused in arguments){
+                if (arguments.Contains ("-server")){
                     LunaServerCheck();
                     LunaSafeServerUpdate();
                     RunLunaServer();
                 }
 
-                if (arguments.Contains("-client"))
-                {
+                if (arguments.Contains ("-client")){
                     LunaClientCheck();
                     LunaSafeClientUpdate();
                 }
             }
 
             InstallDirCheck();
-            SanityCheck();
             LunaClientCheck();
             ClientMenu();
         }
@@ -566,18 +587,12 @@ namespace LunaManager
             try
             {
                 var lunaServer = @"Server.exe";
-                var lunaServerProcess = (new Process
+                using (var lunaServerProcess = (new Process
+                { StartInfo = (new ProcessStartInfo(lunaServer) { WorkingDirectory = @"Server", FileName = lunaServer, CreateNoWindow = false, UseShellExecute = true }) }))
                 {
-                    StartInfo = (new ProcessStartInfo (lunaServer)
-                    {
-                        WorkingDirectory = @"Server",
-                        FileName         = lunaServer,
-                        CreateNoWindow   = false,
-                        UseShellExecute  = true
-                    })
-                });
-                lunaServerProcess.Start();
-                lunaServerProcess.WaitForExit();
+                    lunaServerProcess.Start();
+                }
+
             }
             catch (Exception e)
             {
@@ -643,7 +658,6 @@ namespace LunaManager
         /// </summary>
         static void ServerMenu()
         {
-            Thread thread = new Thread(ServerMenu);
             LunaServerCheck();
             WriteLine(
                 "Here you can operate and manage your Luna Multiplayer servers by choosing one of the options below.");
@@ -740,19 +754,13 @@ namespace LunaManager
             if (input == 1)
             {
                 if (Directory.Exists(@"GameData\LunaMultiplayer"))
-                {
                     Directory.Delete(@"GameData\LunaMultiplayer");
-                }
 
                 if (File.Exists(@"ClientUpdater.exe"))
-                {
                     File.Delete(@"ClientUpdater.exe");
-                }
 
                 if (File.Exists(@"CommonUpdater.dll"))
-                {
                     File.Delete(@"CommonUpdater.dll");
-                }
             }
 
             if (input == 2)
@@ -762,7 +770,6 @@ namespace LunaManager
                     "This will purge your /Server folder leaving anything not backed up, gone forever! Are you sure you wish to delete?");
                 var confirm = ReadLine();
                 if ((confirm == "y") | (confirm == "Y") | (confirm == "YES") | (confirm == "yes"))
-                {
                     try
                     {
                         if (Directory.Exists(Directory.GetCurrentDirectory() + "\\Server"))
@@ -785,11 +792,8 @@ namespace LunaManager
                         ForegroundColor = ConsoleColor.Red;
                         Write(ex.Message);
                     }
-                }
                 else
-                {
-                    WriteLine("Removal Cancalled");
-                }
+                    WriteLine("Removal concluded");
             }
         }
 
