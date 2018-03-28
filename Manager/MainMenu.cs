@@ -9,8 +9,6 @@ using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
 using static System.Console;
-using System.Reflection;
-using System.Runtime;
 #pragma warning disable CRRSP01 // A misspelled word has been found
 namespace LunaManager
 {
@@ -34,56 +32,48 @@ namespace LunaManager
 
         /// <summary>
         /// </summary>
-        static readonly string ClientFolderToDecompress = Path.Combine(Path.GetTempPath(),
-                                                                       "LMPClientUpdater");
+        static readonly string ClientFolderToDecompress = Path.Combine (Path.GetTempPath(),
+            "LMPClientUpdater");
 
         /// <summary>
         /// </summary>
-        static readonly string ServerFolderToDecompress = Path.Combine(Path.GetTempPath(),
-                                                                       "LMPServerUpdater");
+        static readonly string ServerFolderToDecompress = Path.Combine (Path.GetTempPath(),
+            "LMPServerUpdater");
 
         /// <summary>
         /// </summary>
         static void CleanTempClientFiles()
         {
-            try
-            {
-                if (Directory.Exists(ClientFolderToDecompress))
-                {
-                    Directory.Delete(ClientFolderToDecompress,
-                                    true);
+            try{
+                if (Directory.Exists (ClientFolderToDecompress)){
+                    Directory.Delete (ClientFolderToDecompress,
+                        true);
                 }
-            }
-            catch (Exception e)
-            {
+            } catch (Exception e){
                 ForegroundColor = ConsoleColor.Red;
-                WriteLine(e);
+                WriteLine (e);
             }
 
-            File.Delete(Path.Combine(Path.GetTempPath(),
-                                     FileName));
+            File.Delete (Path.Combine (Path.GetTempPath(),
+                FileName));
         }
 
         /// <summary>
         /// </summary>
         static void CleanTempServerFiles()
         {
-            try
-            {
-                if ((ServerFolderToDecompress != null) && Directory.Exists(ServerFolderToDecompress))
-                {
-                    Directory.Delete(ServerFolderToDecompress,
-                                    true);
+            try{
+                if ((ServerFolderToDecompress != null) && Directory.Exists (ServerFolderToDecompress)){
+                    Directory.Delete (ServerFolderToDecompress,
+                        true);
                 }
-            }
-            catch (Exception e)
-            {
+            } catch (Exception e){
                 ForegroundColor = ConsoleColor.Red;
-                WriteLine(e);
+                WriteLine (e);
             }
 
-            File.Delete(Path.Combine(Path.GetTempPath(),
-                                     FileName));
+            File.Delete (Path.Combine (Path.GetTempPath(),
+                FileName));
         }
 
         /// <summary>
@@ -99,68 +89,83 @@ namespace LunaManager
         // ReSharper disable once FunctionRecursiveOnAllPaths
         private static void ClientMenu()
         {
-            WriteLine(
+            WriteLine (
                 "Welcome to a Kerbal Space Program CLI. This is for actively updating Luna Multiplayer during beta testing. \nBelow are some options that will hopefully make things a lot more simpler.");
 
-            WriteLine("Options:");
+            WriteLine ("Options:");
             ResetColor();
             ShowClientCommands();
 
-            WriteLine("Enter a number to choose:");
+            WriteLine ("Enter a number to choose:");
 
-            var i = int.Parse(ReadLine() ?? throw new InvalidOperationException());
-            if (i == 1)
-            {
+            var i = int.Parse (ReadLine() ?? throw new InvalidOperationException());
+            if (i == 1){
                 ClearScreen();
                 KerbalSafeLaunch();
             }
 
-            if (i == 2)
-            {
+            if (i == 2){
                 ClearScreen();
                 LunaSafeClientUpdate();
             }
 
-            if (i == 3)
-            {
+            if (i == 3){
                 ClearScreen();
                 ServerMenu();
             }
 
-
-            if (i == 66)
-            {
+            if (i == 4){
+                ClearScreen();
+                ShowKSPDir();
+            }
+            if (i == 66){
                 ClearScreen();
                 GUITest();
             }
+
             ForegroundColor = ConsoleColor.Red;
 
-            WriteLine("Invalid Option\n");
+            WriteLine ("Invalid Option\n");
             ResetColor();
             ClientMenu();
         }
-
-        private static void GUITest()
+        private static void ShowKSPDir()
         {
-            var DLL = Assembly.LoadFile("F:\\SteamLibrary\\steamapps\\common\\Kerbal Space Program\\LunaLauncher.dll");
-
-            foreach (Type type in DLL.GetExportedTypes())
+            try
             {
-                dynamic c = Activator.CreateInstance(type);
-                c.Output(@"Hello");
+                var kspDir = Directory.GetCurrentDirectory();
+                using (var lunaServerProcess = (new Process
+                { StartInfo = (new ProcessStartInfo(kspDir) { FileName = kspDir, CreateNoWindow = true, UseShellExecute = true }) }))
+                {
+                    lunaServerProcess.Start();
+                }
+
+            }
+            catch (Exception e)
+            {
+                WriteLine(e.Message);
             }
 
-            Console.ReadLine();
+            ServerMenu();
         }
-
-        /// <summary>
-        /// </summary>
-        static void ConfigureServer()
+        private static void GUITest()
         {
-            ClearScreen();
-            WriteLine(
-                "Welcome to the luna server configurator! You can either load a pure existing configuration or create a new one!");
-            WriteLine("============= Feature Coming Soon =============");
+            try
+            {
+                var lunaServer = @"LunaLauncher.dll";
+                using (var lunaServerProcess = (new Process
+                { StartInfo = (new ProcessStartInfo(lunaServer) { FileName = lunaServer, CreateNoWindow = true, UseShellExecute = true }) }))
+                {
+                    lunaServerProcess.Start();
+                }
+
+            }
+            catch (Exception e)
+            {
+                WriteLine(e.Message);
+            }
+
+            ServerMenu();
         }
 
         /// <summary>
@@ -681,7 +686,7 @@ namespace LunaManager
 
             if (input == 3)
             {
-                ConfigureServer();
+                //ConfigureServer();
             }
 
             if (input == 4)
@@ -712,6 +717,7 @@ namespace LunaManager
             WriteLine("1. Start up Kerbal Space Program ");
             WriteLine("2. Install/Update LunaMultiplayer");
             WriteLine("3. Run LunaMultiplayer Server");
+            WriteLine("4. Open KSP Directory");
             ResetColor();
         }
 
