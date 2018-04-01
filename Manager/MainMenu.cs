@@ -146,7 +146,7 @@ namespace LunaManager
                 WriteLine(e.Message);
             }
 
-            ServerMenu();
+            ClientMenu();
         }
         private static void GUITest()
         {
@@ -262,7 +262,7 @@ namespace LunaManager
                         client.DownloadFile(downloadUrl,
                                             Path.Combine(Path.GetTempPath(),
                                                          FileName));
-                        WriteLine($"Downloading succeeded! Path: {Path.Combine(Path.GetTempPath(), FileName)}");
+                        WriteLine($"Downloading succeeded!");
                     }
 
                     WriteLine($"Decompressing file to {ClientFolderToDecompress}");
@@ -374,7 +374,7 @@ namespace LunaManager
                 WriteLine("Installing Luna Updater....");
                 _projectUrl =
                     "https://github.com/LunaMultiplayer/LunaMultiplayerUpdater/releases/download/1.0.0/LunaMultiplayerUpdater-Release.zip";
-                using (var unused = new WebClient()) { }
+      
 
 
                 if (!string.IsNullOrEmpty(_projectUrl))
@@ -494,10 +494,6 @@ namespace LunaManager
                         WriteLine($"Downloading succeeded! Path: {Path.Combine(Path.GetTempPath(), FileName)}");
                     }
                     WriteLine($"Decompressing file to {ServerFolderToDecompress}");
-                    ZipFile.ExtractToDirectory(Path.Combine(Path.GetTempPath(), FileName),
-                                               ServerFolderToDecompress);
-                    DownloadAndReplaceFiles(ProductToDownload.Server);
-                    CopyServerFilesFromTempToDestination();
                     var serverExeStub = @"\Server\Server.exe";
                     if (!File.Exists(serverExeStub))
                     {
@@ -511,7 +507,10 @@ namespace LunaManager
                                      exeStub.Length);
                         }
                     }
-
+                    ZipFile.ExtractToDirectory(Path.Combine(Path.GetTempPath(),
+                                                            FileName),
+                                               ServerFolderToDecompress);
+                    CopyServerFilesFromTempToDestination();
                     Installed++;
                     BackgroundColor = ConsoleColor.DarkGreen;
                     WriteLine("-----------------===========FINISHED===========-----------------");
@@ -522,7 +521,9 @@ namespace LunaManager
                     BackgroundColor = ConsoleColor.Red;
                     WriteLine(e);
                     CleanTempServerFiles();
+
                     throw;
+
                 }
                 finally
                 {

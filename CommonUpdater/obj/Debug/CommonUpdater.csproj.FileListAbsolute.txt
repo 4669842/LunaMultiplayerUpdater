@@ -1,0 +1,6 @@
+D:\git\MyLunaUpdaterRepo\CommonUpdater\bin\Debug\CommonUpdater.dll
+D:\git\MyLunaUpdaterRepo\CommonUpdater\bin\Debug\CommonUpdater.pdb
+D:\git\MyLunaUpdaterRepo\CommonUpdater\obj\Debug\CommonUpdater.csprojResolveAssemblyReference.cache
+D:\git\MyLunaUpdaterRepo\CommonUpdater\obj\Debug\CommonUpdater.csproj.CoreCompileInputs.cache
+D:\git\MyLunaUpdaterRepo\CommonUpdater\obj\Debug\CommonUpdater.dll
+D:\git\MyLunaUpdaterRepo\CommonUpdater\obj\Debug\CommonUpdater.pdb

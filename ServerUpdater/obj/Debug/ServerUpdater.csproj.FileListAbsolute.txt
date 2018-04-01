@@ -1,0 +1,9 @@
+D:\git\MyLunaUpdaterRepo\ServerUpdater\bin\Debug\ServerUpdater.exe
+D:\git\MyLunaUpdaterRepo\ServerUpdater\bin\Debug\ServerUpdater.pdb
+D:\git\MyLunaUpdaterRepo\ServerUpdater\bin\Debug\CommonUpdater.dll
+D:\git\MyLunaUpdaterRepo\ServerUpdater\bin\Debug\CommonUpdater.pdb
+D:\git\MyLunaUpdaterRepo\ServerUpdater\obj\Debug\ServerUpdater.csprojResolveAssemblyReference.cache
+D:\git\MyLunaUpdaterRepo\ServerUpdater\obj\Debug\ServerUpdater.csproj.CoreCompileInputs.cache
+D:\git\MyLunaUpdaterRepo\ServerUpdater\obj\Debug\ServerUpdater.csproj.CopyComplete
+D:\git\MyLunaUpdaterRepo\ServerUpdater\obj\Debug\ServerUpdater.exe
+D:\git\MyLunaUpdaterRepo\ServerUpdater\obj\Debug\ServerUpdater.pdb

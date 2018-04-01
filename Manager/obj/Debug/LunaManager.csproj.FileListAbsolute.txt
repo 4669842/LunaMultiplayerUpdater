@@ -1,0 +1,9 @@
+F:\SteamLibrary\steamapps\common\Kerbal Space Program\LunaManager.exe.config
+F:\SteamLibrary\steamapps\common\Kerbal Space Program\LunaManager.exe
+F:\SteamLibrary\steamapps\common\Kerbal Space Program\LunaManager.pdb
+D:\git\MyLunaUpdaterRepo\Manager\obj\Debug\LunaManager.csprojResolveAssemblyReference.cache
+D:\git\MyLunaUpdaterRepo\Manager\obj\Debug\LunaManager.csproj.CoreCompileInputs.cache
+D:\git\MyLunaUpdaterRepo\Manager\obj\Debug\LunaManager.exe
+D:\git\MyLunaUpdaterRepo\Manager\obj\Debug\LunaManager.pdb
+D:\git\MyLunaUpdaterRepo\Manager\obj\Debug\LunaManager.Properties.Resources.resources
+D:\git\MyLunaUpdaterRepo\Manager\obj\Debug\LunaManager.csproj.GenerateResource.cache

@@ -1,0 +1,35 @@
+<?xml version="1.0"?>
+<ArrayOfArrayOfArrayOfString xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <ArrayOfArrayOfString>
+    <ArrayOfString>
+      <string>D:\git\MyLunaUpdaterRepo\GUIManager\Form1.cs</string>
+      <string>D:\git\MyLunaUpdaterRepo\GUIManager\Form1.cs</string>
+      <string>D:\git\MyLunaUpdaterRepo\GUIManager\Form1.Designer.cs</string>
+      <string>D:\git\MyLunaUpdaterRepo\GUIManager\Form1.resx</string>
+    </ArrayOfString>
+    <ArrayOfString>
+      <string>D:\git\MyLunaUpdaterRepo\GUIManager\App.config</string>
+    </ArrayOfString>
+    <ArrayOfString>
+      <string>D:\git\MyLunaUpdaterRepo\Manager\Properties\app.manifest</string>
+    </ArrayOfString>
+    <ArrayOfString>
+      <string>D:\git\MyLunaUpdaterRepo\GUIManager\Properties\AssemblyInfo.cs</string>
+    </ArrayOfString>
+    <ArrayOfString>
+      <string>D:\git\MyLunaUpdaterRepo\Manager\Properties\AssemblyInfo.cs</string>
+    </ArrayOfString>
+    <ArrayOfString>
+      <string>D:\git\MyLunaUpdaterRepo\GUIManager\Properties\Resources.Designer.cs</string>
+    </ArrayOfString>
+    <ArrayOfString>
+      <string>D:\git\MyLunaUpdaterRepo\GUIManager\Properties\Settings.Designer.cs</string>
+    </ArrayOfString>
+    <ArrayOfString>
+      <string>D:\git\MyLunaUpdaterRepo\Manager\SelfUpdater.cs</string>
+    </ArrayOfString>
+    <ArrayOfString>
+      <string>LunaManager</string>
+    </ArrayOfString>
+  </ArrayOfArrayOfString>
+</ArrayOfArrayOfArrayOfString>
